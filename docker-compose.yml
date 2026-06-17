@@ -1,0 +1,70 @@
+# Local development stack: Redis (LLM response cache), the FastAPI backend,
+# and the Streamlit dashboard.
+#
+#   docker compose up           # everything
+#   docker compose up redis     # just the cache, if you're running the API
+#                                # and dashboard with `uvicorn`/`streamlit`
+#                                # directly on the host
+#
+# Copy .env.example to .env first. When the api/dashboard services run via
+# this file, REDIS_URL is overridden below to reach the `redis` service by
+# its container name; .env's localhost default is for running them directly
+# on the host instead.
+services:
+  redis:
+    # Caches LLM analyst-committee responses
+    # (src/football_predictor/agents/cache.py): a repeat prediction for the
+    # same fixture + sport is served from cache for 1 hour instead of
+    # re-querying the committee.
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  api:
+    image: python:3.11-slim
+    working_dir: /app
+    command: >
+      bash -c "pip install -r requirements.txt -e . &&
+               uvicorn football_predictor.api.main:app --host 0.0.0.0 --port 8000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+  dashboard:
+    image: python:3.11-slim
+    working_dir: /app
+    command: >
+      bash -c "pip install -r requirements.txt -e . &&
+               streamlit run src/football_predictor/dashboard/app.py --server.address=0.0.0.0"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      FOOTBALL_PREDICTOR_API_URL: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+
+volumes:
+  redis-data:

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "football-predictor"
+version = "0.1.0"
+description = "Premier League match outcome prediction system with tiered API and dashboard"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["football_predictor", "config"]
+
+[tool.setuptools.package-dir]
+football_predictor = "src/football_predictor"
+config = "config"
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
