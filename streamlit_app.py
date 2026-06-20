@@ -5,10 +5,10 @@ import traceback
 st.set_page_config(page_title="Sport Predictor", layout="wide")
 
 try:
-    # Try to import the real dashboard
+    st.write("Loading...")
     from football_predictor.dashboard.app import main
+    st.write("Imported successfully!")
     main()
 except Exception as e:
-    st.error("Something went wrong loading the full dashboard.")
+    st.error("Error loading dashboard:")
     st.code(traceback.format_exc())
-    st.info("The backend API might be down or a module is missing.")
