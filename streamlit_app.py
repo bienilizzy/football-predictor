@@ -1,10 +1,14 @@
-"""Root-level entry-point for Streamlit Cloud / local `streamlit run streamlit_app.py`.
+import streamlit as st
+import sys
+import traceback
 
-Delegates entirely to the dashboard module so there is one source of truth.
-Run locally:
-    streamlit run streamlit_app.py
-Or point Streamlit Cloud's main-file setting at this file.
-"""
-from football_predictor.dashboard.app import main
+st.set_page_config(page_title="Sport Predictor", layout="wide")
 
-main()
+try:
+    # Try to import the real dashboard
+    from football_predictor.dashboard.app import main
+    main()
+except Exception as e:
+    st.error("Something went wrong loading the full dashboard.")
+    st.code(traceback.format_exc())
+    st.info("The backend API might be down or a module is missing.")
